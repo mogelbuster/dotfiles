@@ -62,18 +62,9 @@
       "visual-studio-code"
       "google-chrome"
     ];
-    # VS Code extensions, installed with `code --install-extension` by brew bundle.
-    # Cleanup applies here too: extensions installed from the VS Code UI but not
-    # listed below are removed on the next rebuild. IDs are the marketplace
-    # `publisher.name` slug.
-    vscode = [
-      "anthropic.claude-code"  # Claude Code
-      "openai.chatgpt"         # Codex
-      "jnoortheen.nix-ide"     # Nix syntax and formatting for this repo
-      "mvllow.rose-pine"       # same theme as Neovim and WezTerm
-      "dart-code.dart-code"    # Dart; listed explicitly so cleanup keeps it
-      "dart-code.flutter"      # Flutter; depends on dart-code.dart-code
-    ];
+    # VS Code extensions are installed from home.nix, not homebrew.vscode:
+    # brew bundle's VS Code support reported the editor as missing even with
+    # `code` on PATH, which failed every rebuild.
   };
 
   # nix-darwin has no wallpaper option, so set it on every activation.

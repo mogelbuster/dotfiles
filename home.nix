@@ -1,7 +1,19 @@
-{ config, pkgs, user, ... }:
+{ config, lib, pkgs, user, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
+
+  # VS Code extensions (marketplace `publisher.name` IDs, lowercase).
+  # Installed if missing on every rebuild. Extensions added from the VS Code UI
+  # are left alone; remove one here and uninstall it in VS Code to drop it.
+  vscodeExtensions = [
+    "anthropic.claude-code"  # Claude Code
+    "openai.chatgpt"         # Codex
+    "jnoortheen.nix-ide"     # Nix syntax and formatting for this repo
+    "mvllow.rose-pine"       # same theme as Neovim and WezTerm
+    "dart-code.dart-code"    # Dart
+    "dart-code.flutter"      # Flutter; depends on dart-code.dart-code
+  ];
 in
 
 {
@@ -64,6 +76,22 @@ in
   # repo copy lives under .config/vscode to keep the path short.
   home.file."Library/Application Support/Code/User/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/vscode/settings.json";
+  # Runs after Homebrew, so the VS Code cask is already installed. Skips quietly
+  # if it isn't, so a missing editor never blocks the rest of activation.
+  home.activation.vscodeExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    code=/opt/homebrew/bin/code
+    if [ -x "$code" ]; then
+      installed="$("$code" --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+      for ext in ${lib.concatStringsSep " " vscodeExtensions}; do
+        if ! printf '%s\n' "$installed" | grep -qx "$ext"; then
+          run "$code" --install-extension "$ext" || echo "VS Code extension $ext failed to install" >&2
+        fi
+      done
+    else
+      echo "VS Code not found at $code, skipping extensions" >&2
+    fi
+  '';
+
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
 

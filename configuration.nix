@@ -17,10 +17,11 @@
       AppleInterfaceStyle = "Dark";
       KeyRepeat = 2;          # fast key repeat
       InitialKeyRepeat = 15;  # short delay before repeat
-      _HIHideMenuBar = true;  # auto-hide the menu bar
+      _HIHideMenuBar = false;  # keep the menu bar visible
       AppleShowAllExtensions = true;
+      "com.apple.swipescrolldirection" = false;  # turn off "natural" scrolling
     };
-    dock.autohide = true;
+    dock.autohide = false;
     finder.FXPreferredViewStyle = "Nlsv";  # list view by default
     finder.CreateDesktop = false;          # clean desktop
     trackpad.Clicking = true;              # tap to click
@@ -36,10 +37,33 @@
     onActivation.extraFlags = [ "--force" ];
     brews = [
       "herdr"
+      "opencode"     # coding agent CLI (homebrew-core formula, not a cask)
     ];
     casks = [
       "wezterm"
       "claude-code"
+      "codex"        # OpenAI's coding agent CLI
+      "visual-studio-code"
+      "google-chrome"
+    ];
+    # VS Code extensions, installed with `code --install-extension` by brew bundle.
+    # Cleanup applies here too: extensions installed from the VS Code UI but not
+    # listed below are removed on the next rebuild. IDs are the marketplace
+    # `publisher.name` slug.
+    vscode = [
+      "anthropic.claude-code"  # Claude Code
+      "openai.chatgpt"         # Codex
+      "jnoortheen.nix-ide"     # Nix syntax and formatting for this repo
+      "mvllow.rose-pine"       # same theme as Neovim and WezTerm
+      "dart-code.dart-code"    # Dart; listed explicitly so cleanup keeps it
+      "dart-code.flutter"      # Flutter; depends on dart-code.dart-code
     ];
   };
+
+  # nix-darwin has no wallpaper option, so set it on every activation.
+  # Runs as the user because the desktop picture is a per-user setting.
+  # The first run may prompt to allow the terminal to control System Events.
+  system.activationScripts.postActivation.text = ''
+    sudo -u ${user} osascript -e 'tell application "System Events" to tell every desktop to set picture to "/Users/${user}/.dotfiles/wallpapers/JourneysEnd-Night-PC-Wallpaper.png"' || true
+  '';
 }

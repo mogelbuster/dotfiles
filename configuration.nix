@@ -21,7 +21,23 @@
       AppleShowAllExtensions = true;
       "com.apple.swipescrolldirection" = false;  # turn off "natural" scrolling
     };
-    dock.autohide = false;
+    dock = {
+      autohide = false;
+      show-recents = false;  # no "recent apps" section
+      # Exact Dock contents, reset on every rebuild. Finder and Trash are
+      # always present and can't be listed or removed.
+      persistent-apps = [
+        "/Applications/Google Chrome.app"
+        "/Applications/Visual Studio Code.app"
+        "/System/Applications/Utilities/Terminal.app"
+        "/System/Applications/Notes.app"
+        "/System/Applications/System Settings.app"
+      ];
+      # Right side, before Trash (which is always last).
+      persistent-others = [
+        "/Users/${user}/Downloads"
+      ];
+    };
     finder.FXPreferredViewStyle = "Nlsv";  # list view by default
     finder.CreateDesktop = false;          # clean desktop
     trackpad.Clicking = true;              # tap to click

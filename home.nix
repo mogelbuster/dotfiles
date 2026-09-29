@@ -42,8 +42,8 @@ in
     jq        # json on the command line
     lazygit
     neovim
-    # firstmate's universal toolchain and session backends
-    git
+    # firstmate's universal toolchain and session backends. git is not here:
+    # Apple's Command Line Tools already provide it (see README Prerequisites).
     gh        # GitHub CLI; run `gh auth login` once
     tmux      # reference runtime backend
     zellij    # experimental runtime backend
@@ -118,11 +118,14 @@ in
   # lives at <npm root>/@scope/name, so one directory test covers both shapes.
   home.activation.npmGlobals = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     npm=/opt/homebrew/bin/npm
+    # npm is a `#!/usr/bin/env node` script and activation's PATH has no
+    # Homebrew, so give each npm call brew's bin or it cannot find node.
+    brewPath="/opt/homebrew/bin:$PATH"
     if [ -x "$npm" ]; then
-      root="$("$npm" root -g 2>/dev/null)"
+      root="$(PATH="$brewPath" "$npm" root -g 2>/dev/null)"
       for pkg in ${lib.concatStringsSep " " npmGlobals}; do
         if [ ! -d "$root/$pkg" ]; then
-          run "$npm" install -g "$pkg" || echo "npm package $pkg failed to install" >&2
+          run env PATH="$brewPath" "$npm" install -g "$pkg" || echo "npm package $pkg failed to install" >&2
         fi
       done
     else
@@ -138,7 +141,10 @@ in
   home.activation.noMistakes = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -x "$HOME/.no-mistakes/bin/no-mistakes" ]; then
       run mkdir -p "$HOME/.local/bin"
-      run env NO_MISTAKES_LINK_DIR="$HOME/.local/bin" /bin/sh -c \
+      # Activation's PATH has no macOS system dirs, but the installer calls
+      # curl, tar and uname, then starts its daemon with /bin/launchctl.
+      run env PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
+        NO_MISTAKES_LINK_DIR="$HOME/.local/bin" /bin/sh -c \
         '/usr/bin/curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | /bin/sh' \
         || echo "no-mistakes failed to install" >&2
     fi

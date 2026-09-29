@@ -52,10 +52,13 @@
     onActivation.autoUpdate = true;
     onActivation.extraFlags = [ "--force" ];
     # Third-party taps for tools with no homebrew-core formula or cask.
+    # Homebrew 6+ refuses to load anything from an untrusted third-party tap,
+    # so each one is trusted explicitly. Trust covers the whole tap, including
+    # future formulae and casks, so only list taps you would install from anyway.
     taps = [
-      "kunchenguid/tap"  # pi-launcher
-      "can1357/tap"      # omp (Oh My Pi)
-      "stablyai/orca"    # Orca
+      { name = "kunchenguid/tap"; trusted = true; }  # pi-launcher
+      { name = "can1357/tap";     trusted = true; }  # omp (Oh My Pi)
+      { name = "stablyai/orca";   trusted = true; }  # Orca
     ];
     brews = [
       "herdr"

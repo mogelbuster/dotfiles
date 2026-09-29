@@ -25,7 +25,7 @@ Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
 - Homebrew apps (casks and CLI tools)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, git, gh, tmux, zellij, treehouse, Hack Nerd Font)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, gh, tmux, zellij, treehouse, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - VS Code (cask, a short extension list, and a symlinked settings.json with the same theme and font)
@@ -40,6 +40,9 @@ Running the switch builds:
 - Apple Silicon Mac, by default.
 - Intel Mac: change one line.
   In `configuration.nix`, set `nixpkgs.hostPlatform = "x86_64-darwin";` (the comment right there tells you the same thing).
+- Apple's Command Line Tools, from `xcode-select --install`.
+  They provide git, which you need to clone this repo, and Homebrew needs them too.
+  This config uses that git rather than declaring its own: Apple's build carries a built-in config that stores credentials in the macOS Keychain and names new branches `main`, which a separately installed git would silently drop.
 
 ## Fresh-machine setup
 
@@ -64,13 +67,13 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
 2. Symlinks this repo to `~/.dotfiles`.
    This has to happen before the first build, because `home.nix` points at config files through `~/.dotfiles`.
 3. Checks the `user` configured in `flake.nix` against your actual macOS username, and offers to fix it for you if they differ.
-4. Runs the first `darwin-rebuild switch`.
-   It fetches the `darwin-rebuild` tool from the nix-darwin 26.05 release branch, then applies this repo's locked flake config.
+4. Runs `rebuild.sh` for the first switch, applying this repo's locked flake config.
 
-After that, `darwin-rebuild` exists and you're on the normal workflow below.
+After that, you're on the normal workflow below.
 
-The first switch after `treehouse` was added as a flake input also writes its entry into `flake.lock` (Nix locks any new input on first use).
-Because `darwin-rebuild` runs under `sudo`, that file may come back owned by root: fix it with `sudo chown "$USER" flake.lock`, then commit it so later builds stay pinned.
+`rebuild.sh` builds as you and uses `sudo` only to activate.
+Nix writes to `flake.lock` and `.git` while it evaluates (it locks any new input on first use), so building under `sudo` would leave root-owned files there that break your next commit.
+If an older run already did, fix it once with `sudo chown -R "$USER" flake.lock .git`.
 
 ### Validate without applying
 
@@ -101,8 +104,8 @@ If you clone it, review these before you run `bootstrap.sh`:
 
 - **Username**: run `./bootstrap.sh` (it detects your macOS username and offers to set it) OR change the single `user = "kunchen"` line in `flake.nix`.
   Everything else (`configuration.nix`, `home.nix`, home directory paths) is threaded from that one variable.
-- **Host label** `"mac"`, in three places: `flake.nix` (the `darwinConfigurations."mac"` name), `rebuild.sh:5` (the `#mac` at the end of the flake reference), and `bootstrap.sh`'s first-switch command (also `#mac`).
-  All three have to match.
+- **Host label** `"mac"`, in two places: `flake.nix` (the `darwinConfigurations."mac"` name) and `rebuild.sh` (the `darwinConfigurations.mac` in its flake reference).
+  Both have to match.
 - **CPU architecture**, `hostPlatform` in `configuration.nix` (see Prerequisites above).
 
 **Git identity:** this config deliberately does not set your git name or email.
@@ -143,7 +146,7 @@ If you don't use it, just remove it from `brews` in your copy.
   Wires up nixpkgs, nix-darwin, home-manager, and nix-homebrew, and declares the `mac` machine.
 - `configuration.nix` - system-level config: macOS defaults, Homebrew.
 - `home.nix` - user-level config: shell, packages, prompt, and the symlinks described below.
-- `rebuild.sh` - re-applies the config after the first switch.
+- `rebuild.sh` - applies the config; `bootstrap.sh` uses it for the first switch.
   Run this every time you make a change.
 - `home/` - the actual config files that get symlinked into place; the sections below explain the shared symlink model and Pi's narrower selective setup.
 
@@ -162,7 +165,8 @@ Firstmate itself is not installed by this repo: it is a cloned directory you lau
 | --- | --- |
 | Claude Code, Codex, Grok Build (`grok`), Cursor Agent CLI (`cursor-agent`), Pi Launcher (`pi-signed`), cmux, Orca | `casks` in `configuration.nix` |
 | opencode, Oh My Pi (`omp`), node | `brews` in `configuration.nix` |
-| git, gh, tmux, zellij, treehouse | `home.packages` in `home.nix` (treehouse comes from its flake, wired in `flake.nix`) |
+| git | Apple's Command Line Tools (see Prerequisites) |
+| gh, tmux, zellij, treehouse | `home.packages` in `home.nix` (treehouse comes from its flake, wired in `flake.nix`) |
 | Pi, tasks-axi, quota-axi, gh-axi, chrome-devtools-axi, lavish-axi | `npmGlobals` in `home.nix`, installed by `home.activation.npmGlobals` |
 | no-mistakes | `home.activation.noMistakes` in `home.nix`, using the official installer |
 
@@ -172,7 +176,7 @@ One-time steps this config cannot do for you, because each edits agent state or 
 - `gh-axi setup hooks`, `chrome-devtools-axi setup hooks` and `lavish-axi setup hooks` add session hooks to Claude Code, Codex and opencode. `~/.claude/settings.json` is a symlink into this repo, so review and commit the resulting change to `home/.claude/settings.json`.
 - Launch Grok with `grok --trust` and Cursor with `cursor-agent --trust` once per firstmate clone so its project hooks load; approve Pi's project trust prompt once.
 - cmux: open Settings > Automation and choose a Socket Control Mode before the first cmux-backed spawn.
-- Orca: open the app once and use its "Install CLI" action; the cask installs only the app.
+- Orca: open the app once so it is running and ready; the cask already links the `orca` CLI into `/opt/homebrew/bin`.
 - Herdr, cmux, zellij and Orca are alternatives to the tmux default; firstmate picks tmux unless you select another backend.
 
 Deliberately not declared: firstmate's optional voice relay (needs a second machine and a Python venv), the Firstmate 3000 desktop app (private alpha), and the harnesses firstmate verifies only for crewmates rather than as a primary (Gemini CLI, Kimi, Muse, Rovo, agy, Devin).

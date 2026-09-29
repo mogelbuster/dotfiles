@@ -1,7 +1,21 @@
-{ config, lib, pkgs, user, ... }:
+{ config, lib, pkgs, user, treehouse, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
+
+  # Global npm CLIs firstmate expects on PATH: Pi and its axi toolbelt. They
+  # install through Homebrew's node, so `npm install -g` needs no prefix setup
+  # and firstmate's own consent-gated installer keeps working. Installed if
+  # missing on every rebuild, unpinned: firstmate reports a tool below its
+  # version floor at session start, and `npm install -g <name>@latest` moves it.
+  npmGlobals = [
+    "@earendil-works/pi-coding-agent"  # Pi
+    "tasks-axi"                        # backlog transitions
+    "quota-axi"                        # provider quota checks
+    "gh-axi"                           # GitHub from agents; `gh-axi setup hooks` once
+    "chrome-devtools-axi"              # browser automation; `chrome-devtools-axi setup hooks` once
+    "lavish-axi"                       # optional visual decisions and reports; `lavish-axi setup hooks` once
+  ];
 
   # VS Code extensions (marketplace `publisher.name` IDs, lowercase).
   # Installed if missing on every rebuild. Extensions added from the VS Code UI
@@ -28,11 +42,19 @@ in
     jq        # json on the command line
     lazygit
     neovim
+    # firstmate's universal toolchain and session backends
+    git
+    gh        # GitHub CLI; run `gh auth login` once
+    tmux      # reference runtime backend
+    zellij    # experimental runtime backend
+    treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default  # worktree pool
     # the font everything renders in
     nerd-fonts.hack
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
+  # no-mistakes links its command here (see the activation step below).
+  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   programs.zsh = {
     enable = true;
@@ -89,6 +111,36 @@ in
       done
     else
       echo "VS Code not found at $code, skipping extensions" >&2
+    fi
+  '';
+
+  # Runs after Homebrew, so brew's node is already installed. A scoped package
+  # lives at <npm root>/@scope/name, so one directory test covers both shapes.
+  home.activation.npmGlobals = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    npm=/opt/homebrew/bin/npm
+    if [ -x "$npm" ]; then
+      root="$("$npm" root -g 2>/dev/null)"
+      for pkg in ${lib.concatStringsSep " " npmGlobals}; do
+        if [ ! -d "$root/$pkg" ]; then
+          run "$npm" install -g "$pkg" || echo "npm package $pkg failed to install" >&2
+        fi
+      done
+    else
+      echo "npm not found at $npm, skipping global npm packages" >&2
+    fi
+  '';
+
+  # no-mistakes (firstmate's ship gate) has no Homebrew formula or Nix package,
+  # so this runs its official installer when the binary is missing. It lands in
+  # ~/.no-mistakes/bin with the command linked from ~/.local/bin, which is on
+  # PATH through home.sessionPath, so no sudo is needed. Upgrades are
+  # deliberate: rerun the installer when firstmate reports it below its floor.
+  home.activation.noMistakes = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -x "$HOME/.no-mistakes/bin/no-mistakes" ]; then
+      run mkdir -p "$HOME/.local/bin"
+      run env NO_MISTAKES_LINK_DIR="$HOME/.local/bin" /bin/sh -c \
+        '/usr/bin/curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | /bin/sh' \
+        || echo "no-mistakes failed to install" >&2
     fi
   '';
 

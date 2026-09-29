@@ -51,14 +51,31 @@
     onActivation.cleanup = "zap";  # remove anything not listed here
     onActivation.autoUpdate = true;
     onActivation.extraFlags = [ "--force" ];
+    # Third-party taps for tools with no homebrew-core formula or cask.
+    taps = [
+      "kunchenguid/tap"  # pi-launcher
+      "can1357/tap"      # omp (Oh My Pi)
+      "stablyai/orca"    # Orca
+    ];
     brews = [
       "herdr"
-      "opencode"     # coding agent CLI (homebrew-core formula, not a cask)
+      "opencode"          # coding agent CLI (homebrew-core formula, not a cask)
+      "node"              # npm host for Pi and the axi CLIs installed from home.nix
+      "can1357/tap/omp"   # Oh My Pi, a Pi fork firstmate verifies as a primary harness
     ];
     casks = [
       "wezterm"
       "claude-code"
       "codex"        # OpenAI's coding agent CLI
+      "grok-build"   # xAI's coding agent CLI; installs the `grok` command
+      "cursor-cli"   # Cursor Agent CLI; installs the `cursor-agent` command
+      # Signed wrapper that runs Pi as `pi-signed` (firstmate's pi-signed
+      # harness). Apple Silicon only: drop it on an Intel Mac.
+      "kunchenguid/tap/pi-launcher"
+      # Experimental firstmate runtime backends. Both are GUI apps and need a
+      # one-time in-app step, described in README.md.
+      "cmux"
+      "stablyai/orca/orca"
       "visual-studio-code"
       "google-chrome"
     ];

@@ -25,14 +25,15 @@ Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
 - Homebrew apps (casks and CLI tools)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, Hack Nerd Font)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, git, gh, tmux, zellij, treehouse, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - VS Code (cask, a short extension list, and a symlinked settings.json with the same theme and font)
 - Google Chrome
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
-- Coding agents (Claude Code, Codex, opencode) sharing one AGENTS.md
-- Optional Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
+- Coding agents: Claude Code, Codex, opencode, Grok Build, Cursor Agent CLI, Pi, Pi Launcher (`pi-signed`) and Oh My Pi (`omp`); Claude Code, Codex and opencode share one AGENTS.md
+- The rest of the [firstmate](https://github.com/kunchenguid/firstmate) toolchain: GitHub CLI, tmux, zellij, cmux, Orca, treehouse, no-mistakes and the axi CLIs (see "Firstmate toolchain" below)
+- Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
 
 ## Prerequisites
 
@@ -67,6 +68,9 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
    It fetches the `darwin-rebuild` tool from the nix-darwin 26.05 release branch, then applies this repo's locked flake config.
 
 After that, `darwin-rebuild` exists and you're on the normal workflow below.
+
+The first switch after `treehouse` was added as a flake input also writes its entry into `flake.lock` (Nix locks any new input on first use).
+Because `darwin-rebuild` runs under `sudo`, that file may come back owned by root: fix it with `sudo chown "$USER" flake.lock`, then commit it so later builds stay pinned.
 
 ### Validate without applying
 
@@ -130,6 +134,8 @@ If you don't use it, just remove it from `brews` in your copy.
   If you clone this repo, you'd silently inherit my agent instructions - edit or delete `home/AGENTS.md` if you don't want that.
 - The `cc` and `co` shell aliases in `home.nix` are high-agency shortcuts: `claude --dangerously-skip-permissions` and `codex --full-auto`.
   They're convenient for me, but know what they do before you use them.
+- Two Home Manager activation steps reach the network on a rebuild when something is missing: one runs `npm install -g` for the packages listed in `npmGlobals` in `home.nix`, the other runs the official no-mistakes installer.
+  Both are skipped once the tool is present. Trim `npmGlobals` or drop `home.activation.noMistakes` if you don't use firstmate.
 
 ## Repo tour
 
@@ -147,19 +153,35 @@ The files under `home/` are the real files - editing them here is editing your l
 `home.nix` uses `mkOutOfStoreSymlink` to point paths like `~/.config/nvim` straight at `home/.config/nvim` in this repo, so the two never drift out of sync.
 You only run `./rebuild.sh` when you change something that isn't just a symlinked file, like a package list or a system default.
 
-## Optional Pi configuration
+## Firstmate toolchain
 
-Pi is an opt-in CLI, not a dependency this repository vendors. Install it from its owner with the [official Pi instructions](https://pi.dev), for example:
+I run [firstmate](https://github.com/kunchenguid/firstmate) as my primary agent, so this config declares every harness its README recommends and every tool its session-start toolchain check looks for.
+Firstmate itself is not installed by this repo: it is a cloned directory you launch a harness inside, per its README.
 
-```sh
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-```
+| What firstmate wants | Declared where |
+| --- | --- |
+| Claude Code, Codex, Grok Build (`grok`), Cursor Agent CLI (`cursor-agent`), Pi Launcher (`pi-signed`), cmux, Orca | `casks` in `configuration.nix` |
+| opencode, Oh My Pi (`omp`), node | `brews` in `configuration.nix` |
+| git, gh, tmux, zellij, treehouse | `home.packages` in `home.nix` (treehouse comes from its flake, wired in `flake.nix`) |
+| Pi, tasks-axi, quota-axi, gh-axi, chrome-devtools-axi, lavish-axi | `npmGlobals` in `home.nix`, installed by `home.activation.npmGlobals` |
+| no-mistakes | `home.activation.noMistakes` in `home.nix`, using the official installer |
 
-[Pi Launcher](https://github.com/kunchenguid/homebrew-tap) is also optional and installed from its owner, not declared by this config:
+One-time steps this config cannot do for you, because each edits agent state or needs a GUI:
 
-```sh
-brew install --cask kunchenguid/tap/pi-launcher
-```
+- `gh auth login`.
+- `gh-axi setup hooks`, `chrome-devtools-axi setup hooks` and `lavish-axi setup hooks` add session hooks to Claude Code, Codex and opencode. `~/.claude/settings.json` is a symlink into this repo, so review and commit the resulting change to `home/.claude/settings.json`.
+- Launch Grok with `grok --trust` and Cursor with `cursor-agent --trust` once per firstmate clone so its project hooks load; approve Pi's project trust prompt once.
+- cmux: open Settings > Automation and choose a Socket Control Mode before the first cmux-backed spawn.
+- Orca: open the app once and use its "Install CLI" action; the cask installs only the app.
+- Herdr, cmux, zellij and Orca are alternatives to the tmux default; firstmate picks tmux unless you select another backend.
+
+Deliberately not declared: firstmate's optional voice relay (needs a second machine and a Python venv), the Firstmate 3000 desktop app (private alpha), and the harnesses firstmate verifies only for crewmates rather than as a primary (Gemini CLI, Kimi, Muse, Rovo, agy, Devin).
+Add `gemini-cli` or `kimi-code` to `brews` if you want those workers.
+
+## Pi configuration
+
+Pi is installed as a global npm package through `npmGlobals` in `home.nix`, and [Pi Launcher](https://github.com/kunchenguid/homebrew-tap) as the `kunchenguid/tap/pi-launcher` cask in `configuration.nix`, which provides the `pi-signed` command firstmate uses for its signed-wrapper harness identity.
+The launcher is Apple Silicon only; drop it from `casks` on an Intel Mac.
 
 Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
 
@@ -180,7 +202,7 @@ The versions are immutable pins, so Pi does not move them during package updates
 
 Both packages execute with your full user permissions and must be trusted like any other executable code.
 
-Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. This remains an additive post-video layer: it does not install Pi, a launcher, or package source code into this repository.
+Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. No Pi or package source code is vendored into this repository.
 
 ## Notes
 

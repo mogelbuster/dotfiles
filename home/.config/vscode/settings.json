@@ -1,7 +1,7 @@
 {
   // Symlinked to ~/Library/Application Support/Code/User/settings.json by home.nix.
   // Edits made in the VS Code settings UI land in this file.
-  "workbench.colorTheme": "Rosé Pine Moon",
+  "workbench.colorTheme": "Kimbie Dark",
   "editor.fontFamily": "Hack Nerd Font",
   "editor.fontSize": 15,
   "terminal.integrated.fontFamily": "Hack Nerd Font",

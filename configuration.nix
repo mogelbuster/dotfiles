@@ -68,8 +68,8 @@
     ];
     casks = [
       "wezterm"
-      "claude-code"
-      "codex"        # OpenAI's coding agent CLI
+      "claude-code@latest"  # latest channel; plain `claude-code` lags behind new releases
+      "codex"       # OpenAI's coding agent CLI
       "grok-build"   # xAI's coding agent CLI; installs the `grok` command
       "cursor-cli"   # Cursor Agent CLI; installs the `cursor-agent` command
       # Signed wrapper that runs Pi as `pi-signed` (firstmate's pi-signed

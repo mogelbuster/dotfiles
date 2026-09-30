@@ -25,14 +25,15 @@ Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
 - Homebrew apps (casks and CLI tools)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, gh, tmux, zellij, treehouse, Hack Nerd Font)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, gh, tmux, zellij, treehouse, OpenTofu, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - VS Code (cask, a short extension list, and a symlinked settings.json with the same theme and font)
 - Google Chrome
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
-- Coding agents: Claude Code, Codex, opencode, Grok Build, Cursor Agent CLI, Pi, Pi Launcher (`pi-signed`) and Oh My Pi (`omp`); Claude Code, Codex and opencode share one AGENTS.md
+- Coding agents: Claude Code, Codex, opencode, Grok Build, Cursor Agent CLI, Kimi Code, Pi, Pi Launcher (`pi-signed`) and Oh My Pi (`omp`); Claude Code, Codex, opencode and Pi share one AGENTS.md, and Claude Code auto-compacts at 500k tokens
 - The rest of the [firstmate](https://github.com/kunchenguid/firstmate) toolchain: GitHub CLI, tmux, zellij, cmux, Orca, treehouse, no-mistakes and the axi CLIs (see "Firstmate toolchain" below)
+- The rest of Kun's agent workflow: OpenSuperWhisper (voice prompts), baby-menu (quota in the menu bar), Automic Vault (secrets with per-use approval), Tailscale, gnhf (long-running agent loops) and backpass (AGENTS.md improvements from past sessions)
 - Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
 
 ## Prerequisites
@@ -69,7 +70,7 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
 3. Checks the `user` configured in `flake.nix` against your actual macOS username, and offers to fix it for you if they differ.
 4. Runs `rebuild.sh` for the first switch, applying this repo's locked flake config.
 
-After that, you're on the normal workflow below.
+After that, follow [MANUAL-SETUP.md](MANUAL-SETUP.md) for the sign-ins, permissions and app settings no config can do, then you're on the normal workflow below.
 
 `rebuild.sh` builds as you and uses `sudo` only to activate.
 Nix writes to `flake.lock` and `.git` while it evaluates (it locks any new input on first use), so building under `sudo` would leave root-owned files there that break your next commit.
@@ -164,23 +165,24 @@ Firstmate itself is not installed by this repo: it is a cloned directory you lau
 | What firstmate wants | Declared where |
 | --- | --- |
 | Claude Code, Codex, Grok Build (`grok`), Cursor Agent CLI (`cursor-agent`), Pi Launcher (`pi-signed`), cmux, Orca | `casks` in `configuration.nix` |
-| opencode, Oh My Pi (`omp`), node | `brews` in `configuration.nix` |
+| opencode, Oh My Pi (`omp`), Kimi Code (`kimi`), node | `brews` in `configuration.nix` |
 | git | Apple's Command Line Tools (see Prerequisites) |
 | gh, tmux, zellij, treehouse | `home.packages` in `home.nix` (treehouse comes from its flake, wired in `flake.nix`) |
 | Pi, tasks-axi, quota-axi, gh-axi, chrome-devtools-axi, lavish-axi | `npmGlobals` in `home.nix`, installed by `home.activation.npmGlobals` |
 | no-mistakes | `home.activation.noMistakes` in `home.nix`, using the official installer |
 
-One-time steps this config cannot do for you, because each edits agent state or needs a GUI:
+Tools from the rest of the workflow, which firstmate does not check for:
 
-- `gh auth login`.
-- `gh-axi setup hooks`, `chrome-devtools-axi setup hooks` and `lavish-axi setup hooks` add session hooks to Claude Code, Codex and opencode. `~/.claude/settings.json` is a symlink into this repo, so review and commit the resulting change to `home/.claude/settings.json`.
-- Launch Grok with `grok --trust` and Cursor with `cursor-agent --trust` once per firstmate clone so its project hooks load; approve Pi's project trust prompt once.
-- cmux: open Settings > Automation and choose a Socket Control Mode before the first cmux-backed spawn.
-- Orca: open the app once so it is running and ready; the cask already links the `orca` CLI into `/opt/homebrew/bin`.
-- Herdr, cmux, zellij and Orca are alternatives to the tmux default; firstmate picks tmux unless you select another backend.
+| Tool | Declared where |
+| --- | --- |
+| OpenSuperWhisper, baby-menu, Tailscale, Automic Vault | `casks` in `configuration.nix` |
+| OpenTofu | `home.packages` in `home.nix` |
+| gnhf, backpass | `npmGlobals` in `home.nix` |
 
-Deliberately not declared: firstmate's optional voice relay (needs a second machine and a Python venv), the Firstmate 3000 desktop app (private alpha), and the harnesses firstmate verifies only for crewmates rather than as a primary (Gemini CLI, Kimi, Muse, Rovo, agy, Devin).
-Add `gemini-cli` or `kimi-code` to `brews` if you want those workers.
+The one-time sign-ins and app settings this config cannot do for you are in [MANUAL-SETUP.md](MANUAL-SETUP.md).
+
+Deliberately not declared: firstmate's optional voice relay (needs a second machine and a Python venv), the Firstmate 3000 desktop app (private alpha), and the other harnesses firstmate verifies only for crewmates rather than as a primary (Gemini CLI, Muse, Rovo, agy, Devin).
+Kimi Code is the exception, declared because its models are part of the crew dispatch mix; add `gemini-cli` to `brews` if you want Gemini workers too.
 
 ## Pi configuration
 

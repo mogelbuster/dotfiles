@@ -15,6 +15,8 @@ let
     "gh-axi"                           # GitHub from agents; `gh-axi setup hooks` once
     "chrome-devtools-axi"              # browser automation; `chrome-devtools-axi setup hooks` once
     "lavish-axi"                       # optional visual decisions and reports; `lavish-axi setup hooks` once
+    "gnhf"                             # long-running agent loops ("good night, have fun")
+    "backpass"                         # proposes AGENTS.md edits from past agent sessions
   ];
 
   # VS Code extensions (marketplace `publisher.name` IDs, lowercase).
@@ -48,11 +50,15 @@ in
     tmux      # reference runtime backend
     zellij    # experimental runtime backend
     treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default  # worktree pool
+    opentofu  # infrastructure as code for servers agents provision
     # the font everything renders in
     nerd-fonts.hack
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
+  # Agents drive your real, signed-in Chrome instead of a blank isolated one.
+  # Needs Chrome's remote debugging switched on once (MANUAL-SETUP.md).
+  home.sessionVariables.CHROME_DEVTOOLS_AXI_AUTO_CONNECT = "1";
   # no-mistakes links its command here (see the activation step below).
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
@@ -168,5 +174,7 @@ in
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".config/opencode/AGENTS.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
+  home.file.".pi/agent/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
 }

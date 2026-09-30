@@ -29,7 +29,17 @@
       persistent-apps = [
         "/Applications/Google Chrome.app"
         "/Applications/Visual Studio Code.app"
+        "/Applications/WezTerm.app"
         "/System/Applications/Utilities/Terminal.app"
+        # agent workspaces: firstmate's optional cmux and Orca backends
+        "/Applications/cmux.app"
+        "/Applications/Orca.app"
+        "/Applications/Pi Launcher.app"
+        # workflow utilities; the last three also live in the menu bar
+        "/Applications/OpenSuperWhisper.app"
+        "/Applications/Baby Menu.app"
+        "/Applications/Automic Vault.app"
+        "/Applications/Tailscale.app"
         "/System/Applications/Notes.app"
         "/System/Applications/System Settings.app"
       ];
@@ -56,15 +66,17 @@
     # so each one is trusted explicitly. Trust covers the whole tap, including
     # future formulae and casks, so only list taps you would install from anyway.
     taps = [
-      { name = "kunchenguid/tap"; trusted = true; }  # pi-launcher
+      { name = "kunchenguid/tap"; trusted = true; }  # pi-launcher, baby-menu
       { name = "can1357/tap";     trusted = true; }  # omp (Oh My Pi)
       { name = "stablyai/orca";   trusted = true; }  # Orca
+      { name = "automic-vault/isotopes"; trusted = true; }  # Automic Vault
     ];
     brews = [
       "herdr"
       "opencode"          # coding agent CLI (homebrew-core formula, not a cask)
       "node"              # npm host for Pi and the axi CLIs installed from home.nix
       "can1357/tap/omp"   # Oh My Pi, a Pi fork firstmate verifies as a primary harness
+      "kimi-code"         # Kimi Code CLI (`kimi`), a firstmate crewmate harness
     ];
     casks = [
       "wezterm"
@@ -81,6 +93,12 @@
       "stablyai/orca/orca"
       "visual-studio-code"
       "google-chrome"
+      "opensuperwhisper"            # local Whisper voice dictation for prompting agents
+      "kunchenguid/tap/baby-menu"   # menu bar app; shows subscription quota at a glance
+      "tailscale-app"               # private network between machines, servers and CI
+      # Keychain-backed secrets with per-command approval for agents; the app
+      # updates itself. Apple Silicon and macOS Sonoma or newer only.
+      "automic-vault/isotopes/automic-vault"
     ];
     # VS Code extensions are installed from home.nix, not homebrew.vscode:
     # brew bundle's VS Code support reported the editor as missing even with

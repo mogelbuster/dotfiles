@@ -7,6 +7,17 @@ Work top to bottom on a fresh machine.
 On an existing machine, pick up any section you have not done yet.
 Each section says when it is optional.
 
+## Running in a virtual machine
+
+Skip this if the dotfiles are on a physical Mac.
+
+- **Size the VM before setting up.** The workflow runs a first mate, several crew agents, Chrome and VS Code at once, and every crew task gets its own git worktree.
+  Give it about 24 GB of RAM (16 GB minimum), 8 or more CPU cores, and about 200 GB of disk (250 GB or more if you will install Xcode).
+  Growing a VM's disk and RAM after the fact is far more work than sizing it up front.
+- **Voice input runs on the host, not in the VM.** The VM does not receive the host's microphone, so OpenSuperWhisper installed inside it hears nothing.
+  Install OpenSuperWhisper on the host Mac instead: it types the transcription into whichever window has focus, so dictating into the VM's window works as if you typed it.
+  The copy this repo installs inside the VM can stay unused.
+
 ## 1. Open a new terminal
 
 After the first switch, quit your terminal and open WezTerm.
@@ -95,7 +106,10 @@ Anything signed in to that Chrome is reachable by the agent, so only approve ses
 
 Open each once and finish its first-run setup.
 
-- **OpenSuperWhisper** (voice prompts): grant microphone and accessibility access, choose a Whisper model, and pick the keyboard shortcut that starts recording.
+- **OpenSuperWhisper** (voice prompts; in a VM, do this on the host instead, see "Running in a virtual machine"): grant microphone and accessibility access and pick the keyboard shortcut that starts recording.
+  For the model, choose the **Whisper** engine, not Parakeet: only Whisper supports the initial prompt below.
+  All three Whisper options are the same large-v3-turbo model at different compression levels; **Whisper V3 Large** is the full-quality one (older app versions call it "Turbo V3 large").
+  Pick Medium or Small only if the machine is short on memory.
   Under the transcription settings, add your project names and jargon to the **initial prompt** so they transcribe correctly.
 - **Automic Vault** (secrets for agents): see section 7.
 - **Tailscale**: sign in. Add every machine and server you want agents to reach.

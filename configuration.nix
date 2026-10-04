@@ -50,6 +50,7 @@
     };
     finder.FXPreferredViewStyle = "Nlsv";  # list view by default
     finder.CreateDesktop = false;          # clean desktop
+    finder.AppleShowAllFiles = true;       # show hidden files and folders
     trackpad.Clicking = true;              # tap to click
   };
   nix-homebrew = {
